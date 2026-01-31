@@ -1,48 +1,68 @@
-const Task=require("../models/Taskmodel")
-const User=require("../models/Usermodel")
-const createTask=async(taskData)=>{
-    const{title,userId}=taskData;
-    const userexists=await User.findById(userId);
-    if(!userexists){
-        throw new Error(`user doesn't exist`);
-    }
-    const newtask=new Task({
-        title,
-        userId
-    })
-    return await newtask.save();
-}
-const getAllTasks=async()=>{
-    return await Task.find();
-}
-const getTaskById=async(taskId)=>{
-    const exists=await Task.findById(taskId);
-    if(!exists){
-        throw new Error(`task not found`);
-    }
-    return exists;
-}
-const getTaskByUser=async(userId)=>{
-    return await Task.find({userId});
-}
-const updateTask=async(taskId,newData)=>{
-    const exist=await Task.findByIdAndUpdate(
-        taskId,
-        newData,
-        {new:true},
-    )
-    if(!exist){
-        throw new Error(`Task not found`);
-    }
-    return exist;
-}
-const deleteTask=async(taskId)=>{
-    const exist=await Task.findByIdAndDelete(taskId);
-    if(!exist){
-        throw new Error(`Task not found`);
-    }
-    return exist;
-}
-module.exports={
-    createTask,getAllTasks,getTaskById,updateTask,deleteTask,getTaskByUser
-}
+const mongoose = require("mongoose");
+const Task = require("../models/Taskmodel");
+const User = require("../models/Usermodel");
+
+const createTask = async ({ title, userId, status }) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid user ID");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User does not exist");
+
+  return await Task.create({ title, userId, status });
+};
+
+const getAllTasks = async () => {
+  return await Task.find().populate("userId", "username email");
+};
+
+const getTaskById = async (taskId) => {
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    throw new Error("Invalid task ID");
+  }
+
+  const task = await Task.findById(taskId);
+  if (!task) throw new Error("Task not found");
+
+  return task;
+};
+
+const getTaskByUser = async (userId) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid user ID");
+  }
+
+  return await Task.find({ userId });
+};
+
+const updateTask = async (taskId, data) => {
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    throw new Error("Invalid task ID");
+  }
+
+  const task = await Task.findByIdAndUpdate(taskId, data, { new: true });
+  if (!task) throw new Error("Task not found");
+
+  return task;
+};
+
+const deleteTask = async (taskId) => {
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    throw new Error("Invalid task ID");
+  }
+
+  const task = await Task.findByIdAndDelete(taskId);
+  if (!task) throw new Error("Task not found");
+
+  return task;
+};
+
+module.exports = {
+  createTask,
+  getAllTasks,
+  getTaskById,
+  getTaskByUser,
+  updateTask,
+  deleteTask
+};

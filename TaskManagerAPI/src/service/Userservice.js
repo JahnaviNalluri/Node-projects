@@ -1,42 +1,61 @@
-const User=require("../models/Usermodel");
-const createUser=async(userData)=>{
-    const{username,email}=userData;
-    const exists=await findOne({email});
-    if(exists){
-        throw Error(`user already exist`);
-    }
-    const newuser=new User({
-        username,email
-    });
-    return await newuser.save();
-}
-const getAllUsers=async()=>{
-    return await User.find();
-}
-const getUserById=async(userId)=>{
-    const user=await findById(userId);
-    if(!user){
-        throw Error(`User not found`);
-    }
-    return user;
-};
-const deleteUser=async(userId)=>{
-    const exists=await findByIdAndDelete(userId);
-     if(!exists){
-        throw Error(`user not exist`);
-    }
-    return exists;
-}
-const updateUser= async(userId,updatedData)=>{
-    const exists=await findByIdAndUpdate(
-        userId,
-        updatedData,
-        {new:true}
-    );
-    if(!exists){
-        throw Error(`User not exist`);
-    }
-    return exists;
-}
+const mongoose = require("mongoose");
+const User = require("../models/Usermodel");
+const Task = require("../models/Taskmodel");
 
-export default{createUser,deleteUser,updateUser,getAllUsers,getUserById};
+const createUser = async ({ username, email }) => {
+  const exists = await User.findOne({
+    $or: [{ email }, { username }]
+  });
+
+  if (exists) {
+    throw new Error("User already exists");
+  }
+
+  return await User.create({ username, email });
+};
+
+const getAllUsers = async () => {
+  return await User.find();
+};
+
+const getUserById = async (userId) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid user ID");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  return user;
+};
+
+const updateUser = async (userId, data) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid user ID");
+  }
+
+  const user = await User.findByIdAndUpdate(userId, data, { new: true });
+  if (!user) throw new Error("User not found");
+
+  return user;
+};
+
+const deleteUser = async (userId) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid user ID");
+  }
+
+  await Task.deleteMany({ userId });
+  const user = await User.findByIdAndDelete(userId);
+
+  if (!user) throw new Error("User not found");
+  return user;
+};
+
+module.exports = {
+  createUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser
+};
