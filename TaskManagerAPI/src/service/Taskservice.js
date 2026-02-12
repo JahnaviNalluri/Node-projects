@@ -2,21 +2,21 @@ const mongoose = require("mongoose");
 const Task = require("../models/Taskmodel");
 const User = require("../models/Usermodel");
 
-const createTask = async ({ title,status,userId,duedate,priority }) => {
+const createTask = async (data,userId) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new Error("Invalid user ID");
   }
 
   const user = await User.findById(userId);
   if (!user) throw new Error("User does not exist");
-
-  return await Task.create({ title, status,userId,duedate,priority });
+  const {title,status,duedate,priority}=data; 
+  return await Task.create({ title,status,priority,duedate,userId});
 };
 
-const getAllTasks = async (page=1,limit=2) => {
+const getAllTasks = async (userId,page=1,limit=2) => {
   const skip=(page-1)*limit;
-  const tasks=await Task.find().sort({priority:1}).skip(skip).limit(limit);
-  const total=await Task.countDocuments();
+  const tasks=await Task.find({userId}).sort({priority:1}).skip(skip).limit(limit);
+  const total=await Task.countDocuments({userId});
   return{
     total,page,totalPages:Math.ceil(total/limit),tasks
   };

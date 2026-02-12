@@ -3,6 +3,7 @@ const userService = require("../service/userService");
 const createUser = async (req, res) => {
   try {
     const user = await userService.createUser(req.body);
+    user.password=undefined;
     res.status(201).json(user);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -45,10 +46,22 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const loginUser=async(req,res)=>{
+  try{
+    const {user,token}=await userService.loginUser(req.body);
+    //req.session.userId=user._id;
+    user.password=undefined;
+    res.status(201).json({message:"Login succesfull",token,user});
+  }catch(err){
+    res.status(400).json({message:err.message});
+  }
+}
 module.exports = {
   createUser,
   getAllUsers,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  loginUser
+  
 };

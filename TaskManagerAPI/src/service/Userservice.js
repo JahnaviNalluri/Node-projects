@@ -1,17 +1,20 @@
+require("dotenv").config();
 const mongoose = require("mongoose");
 const User = require("../models/Usermodel");
 const Task = require("../models/Taskmodel");
-
-const createUser = async ({ username, email }) => {
-  const exists = await User.findOne({
-    $or: [{ email }, { username }]
-  });
+const bcrypt=require("bcrypt");
+const jwt=require("jsonwebtoken");
+const { configDotenv } = require("dotenv");
+const createUser = async ({ username, email,password }) => {
+  const exists = await User.findOne({email});
 
   if (exists) {
     throw new Error("User already exists");
   }
+  const salt=await bcrypt.genSalt(10);
+  const pass=await bcrypt.hash(password,salt);
 
-  return await User.create({ username, email });
+  return await User.create({ username, email,password:pass });
 };
 
 const getAllUsers = async () => {
@@ -52,10 +55,25 @@ const deleteUser = async (userId) => {
   return user;
 };
 
+const loginUser=async({email,password})=>{
+  const user=await User.findOne({email});
+  if(!user) throw new Error("User not found");
+  const isMatch=await bcrypt.compare(password,user.password);
+  if(!isMatch) throw new Error("Invalid password");
+
+  const token=jwt.sign(
+    {id:user._id},
+    process.env.JWT_SECRET,
+    {expiresIn:"1h"}
+  );
+
+  return {user,token};
+}
 module.exports = {
   createUser,
   getAllUsers,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  loginUser
 };
